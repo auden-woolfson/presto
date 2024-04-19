@@ -18,9 +18,13 @@ import com.facebook.airlift.http.client.HttpClient;
 import com.facebook.airlift.http.client.Request;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.airlift.log.Logger;
+import com.facebook.presto.router.RouterConfig;
+import com.facebook.presto.router.spec.RouterSpec;
+import com.facebook.presto.spi.PrestoException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.inject.Inject;
 import io.airlift.units.Duration;
 
 import javax.annotation.Nullable;
@@ -29,6 +33,7 @@ import javax.inject.Inject;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +43,8 @@ import static com.facebook.airlift.http.client.FullJsonResponseHandler.createFul
 import static com.facebook.airlift.http.client.HttpStatus.OK;
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.json.JsonCodec.jsonCodec;
+import static com.facebook.presto.router.RouterUtil.parseRouterConfig;
+import static com.facebook.presto.spi.StandardErrorCode.CONFIGURATION_INVALID;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.units.Duration.nanosSince;
 import static java.util.Objects.requireNonNull;
@@ -50,6 +57,8 @@ public abstract class RemoteState
     private static final JsonCodec<JsonNode> JSON_CODEC = jsonCodec(JsonNode.class);
 
     private final HttpClient httpClient;
+    private final URI remoteUri;
+    private final Optional<String> routerUserCredentials;
     public final URI remoteUri;
     private final AtomicReference<Future<?>> future = new AtomicReference<>();
     private final AtomicLong lastUpdateNanos = new AtomicLong();
@@ -60,12 +69,15 @@ public abstract class RemoteState
     private volatile Instant lastHealthyResponseTime = Instant.now();
 
     @Inject
-    public RemoteState(HttpClient httpClient, URI remoteUri, RemoteStateConfig remoteStateConfig)
+    public RemoteState(HttpClient httpClient, URI remoteUri, RouterConfig routerConfig, RemoteStateConfig remoteStateConfig)
     {
         this.isHealthy = new AtomicBoolean(true);
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.remoteUri = requireNonNull(remoteUri, "remoteUri is null");
         this.clusterUnhealthyTimeout = remoteStateConfig.getClusterUnhealthyTimeout();
+        RouterSpec routerSpec = parseRouterConfig(routerConfig)
+                .orElseThrow(() -> new PrestoException(CONFIGURATION_INVALID, "Failed to load router config"));
+        this.routerUserCredentials = routerSpec.getUserCredentials();
     }
 
     public void handleResponse(JsonNode response) {}
@@ -74,9 +86,8 @@ public abstract class RemoteState
     {
         Duration sinceUpdate = nanosSince(lastUpdateNanos.get());
 
-        if (nanosSince(lastWarningLogged.get()).toMillis() > 1_000 &&
-                sinceUpdate.toMillis() > 10_000 &&
-                future.get() != null) {
+        if (java.time.Duration.between(lastHealthyResponseTime, Instant.now()).compareTo(clusterUnhealthyTimeout) >= 0 && isHealthy.get()) {
+            isHealthy.set(false);
             log.warn(
                     "Coordinator update request to %s has not returned in %s",
                     String.format("%s:%d", remoteUri.getHost(), remoteUri.getPort()),
@@ -84,15 +95,10 @@ public abstract class RemoteState
             lastWarningLogged.set(System.nanoTime());
         }
 
-        if (java.time.Duration.between(lastHealthyResponseTime, Instant.now()).compareTo(clusterUnhealthyTimeout) >= 0 && isHealthy.get()) {
-            isHealthy.set(false);
-            log.warn("%s:%d marked as unhealthy", remoteUri.getHost(), remoteUri.getPort());
-        }
-
         if (sinceUpdate.toMillis() > 1_000 && future.get() == null) {
-            Request request = prepareGet()
-                    .setUri(remoteUri)
-                    .build();
+            Request.Builder requestBuilder = prepareGet().setUri(remoteUri);
+            routerUserCredentials.ifPresent(s -> requestBuilder.addHeader("Authorization", "Basic " + s));
+            Request request = requestBuilder.build();
 
             HttpClient.HttpResponseFuture<FullJsonResponseHandler.JsonResponse<JsonNode>> responseFuture = httpClient.executeAsync(request, createFullJsonResponseHandler(JSON_CODEC));
             future.compareAndSet(null, responseFuture);
@@ -109,7 +115,7 @@ public abstract class RemoteState
                             handleResponse(result.getValue());
                         }
                         if (result.getStatusCode() != OK.code()) {
-                            log.warn("Error fetching node state from %s returned status code %d", remoteUri, result.getStatusCode());
+                            log.warn("Error fetching node state from %s returned status %d", remoteUri, result.getStatusCode());
                         }
                         else {
                             if (!isHealthy.get()) {

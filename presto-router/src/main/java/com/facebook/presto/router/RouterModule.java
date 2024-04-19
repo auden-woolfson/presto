@@ -14,6 +14,8 @@
 package com.facebook.presto.router;
 
 import com.facebook.airlift.configuration.AbstractConfigurationAwareModule;
+import com.facebook.presto.ClientRequestFilterManager;
+import com.facebook.presto.client.NodeVersion;
 import com.facebook.presto.router.cluster.ClusterManager;
 import com.facebook.presto.router.cluster.ClusterStatusResource;
 import com.facebook.presto.router.cluster.ForClusterInfoTracker;
@@ -25,6 +27,10 @@ import com.facebook.presto.router.predictor.ForQueryCpuPredictor;
 import com.facebook.presto.router.predictor.ForQueryMemoryPredictor;
 import com.facebook.presto.router.predictor.PredictorManager;
 import com.facebook.presto.router.predictor.RemoteQueryFactory;
+import com.facebook.presto.server.PluginManager;
+import com.facebook.presto.server.PluginManagerConfig;
+import com.facebook.presto.server.ServerConfig;
+import com.facebook.presto.server.WebUiResource;
 import com.google.inject.Binder;
 import com.google.inject.Scopes;
 import io.airlift.units.Duration;
@@ -56,10 +62,17 @@ public class RouterModule
     @Override
     protected void setup(Binder binder)
     {
+        ServerConfig serverConfig = buildConfigObject(ServerConfig.class);
+
         httpServerBinder(binder).bindResource(UI_PATH, ROUTER_UI).withWelcomeFile(INDEX_HTML);
         configBinder(binder).bindConfig(RouterConfig.class);
 
         configBinder(binder).bindConfig(RemoteStateConfig.class);
+        binder.bind(ScheduledExecutorService.class).annotatedWith(ForClusterManager.class).toInstance(newSingleThreadScheduledExecutor(threadsNamed("cluster-config")));
+
+        // resource for serving static content
+        jaxrsBinder(binder).bind(WebUiResource.class);
+
         binder.bind(ScheduledExecutorService.class).annotatedWith(ForClusterManager.class).toInstance(newSingleThreadScheduledExecutor(threadsNamed("cluster-config")));
 
         binder.bind(ClusterManager.class).in(Scopes.SINGLETON);
@@ -69,15 +82,25 @@ public class RouterModule
         bindHttpClient(binder, QUERY_TRACKER, ForClusterInfoTracker.class, IDLE_TIMEOUT_SECOND, REQUEST_TIMEOUT_SECOND);
 
         binder.bind(ClusterManager.ClusterStatusTracker.class).in(Scopes.SINGLETON);
+        //Determine the NodeVersion
+        NodeVersion nodeVersion = new NodeVersion(serverConfig.getPrestoVersion());
+        binder.bind(NodeVersion.class).toInstance(nodeVersion);
+
+        binder.bind(ClusterStatusTracker.class).in(Scopes.SINGLETON);
 
         binder.bind(PredictorManager.class).in(Scopes.SINGLETON);
         binder.bind(RemoteQueryFactory.class).in(Scopes.SINGLETON);
+
+        binder.bind(PluginManager.class).in(Scopes.SINGLETON);
+        configBinder(binder).bindConfig(PluginManagerConfig.class);
 
         bindHttpClient(binder, QUERY_PREDICTOR, ForQueryCpuPredictor.class, IDLE_TIMEOUT_SECOND, PREDICTOR_REQUEST_TIMEOUT_SECOND);
         bindHttpClient(binder, QUERY_PREDICTOR, ForQueryMemoryPredictor.class, IDLE_TIMEOUT_SECOND, PREDICTOR_REQUEST_TIMEOUT_SECOND);
 
         jaxrsBinder(binder).bind(RouterResource.class);
         jaxrsBinder(binder).bind(ClusterStatusResource.class);
+
+        binder.bind(ClientRequestFilterManager.class).in(Scopes.SINGLETON);
     }
 
     private void bindHttpClient(Binder binder, String name, Class<? extends Annotation> annotation, int idleTimeout, int requestTimeout)
