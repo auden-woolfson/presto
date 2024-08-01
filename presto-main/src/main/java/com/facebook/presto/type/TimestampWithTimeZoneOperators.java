@@ -17,6 +17,7 @@ import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.function.SqlFunctionProperties;
 import com.facebook.presto.common.type.AbstractLongType;
 import com.facebook.presto.common.type.StandardTypes;
+import com.facebook.presto.common.type.TimeZoneKey;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.function.BlockIndex;
 import com.facebook.presto.spi.function.BlockPosition;
@@ -76,7 +77,10 @@ public final class TimestampWithTimeZoneOperators
     @SqlNullable
     public static Boolean equal(@SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long left, @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long right)
     {
-        return unpackMillisUtc(left) == unpackMillisUtc(right);
+        if (unpackZoneKey(left).equals(unpackZoneKey(right))) {
+            return unpackMillisUtc(left) == unpackMillisUtc(right);
+        }
+        return Boolean.FALSE;
     }
 
     @ScalarOperator(NOT_EQUAL)
