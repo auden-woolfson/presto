@@ -39,6 +39,7 @@ import org.joda.time.format.PeriodParser;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -78,6 +79,7 @@ public final class DateTimeUtils
     private static final DateTimeFormatter TIMESTAMP_WITHOUT_TIME_ZONE_FORMATTER;
     private static final DateTimeFormatter TIMESTAMP_WITH_TIME_ZONE_FORMATTER;
     private static final DateTimeFormatter TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER;
+    private static final java.time.format.DateTimeFormatter NEW_TS_WITHOUT_TZ_FORMATTER;
 
     static {
         DateTimeParser[] timestampWithoutTimeZoneParser = {
@@ -135,6 +137,12 @@ public final class DateTimeUtils
                 .append(timestampWithTimeZonePrinter, timestampWithOrWithoutTimeZoneParser)
                 .toFormatter()
                 .withOffsetParsed();
+        NEW_TS_WITHOUT_TZ_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
+                .append(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                .appendLiteral(" ")
+                .append(java.time.format.DateTimeFormatter.ofPattern("HH:mm[:ss[.SSS[SSS[SSS]]]]"))
+                .toFormatter()
+                .withLocale(Locale.UK);
     }
 
     /**
@@ -218,13 +226,7 @@ public final class DateTimeUtils
      */
     public static long parseTimestampWithoutTimeZone(String value)
     {
-        LocalDateTime localDateTime = TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER.parseLocalDateTime(value);
-        try {
-            return (long) getLocalMillis.invokeExact(localDateTime);
-        }
-        catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        return java.time.LocalDateTime.parse(value, NEW_TS_WITHOUT_TZ_FORMATTER).atZone(ZoneId.of("Z")).toInstant().toEpochMilli();
     }
 
     /**
