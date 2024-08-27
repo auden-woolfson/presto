@@ -137,8 +137,9 @@ public final class DateTimeUtils
                 .append(timestampWithTimeZonePrinter, timestampWithOrWithoutTimeZoneParser)
                 .toFormatter()
                 .withOffsetParsed();
+
         NEW_TS_WITHOUT_TZ_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
-                .append(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                .append(java.time.format.DateTimeFormatter.ofPattern("yyy-MM-dd"))
                 .appendLiteral(" ")
                 .append(java.time.format.DateTimeFormatter.ofPattern("HH:mm[:ss[.SSS[SSS[SSS]]]]"))
                 .toFormatter()
@@ -238,7 +239,7 @@ public final class DateTimeUtils
     @Deprecated
     public static long parseTimestampWithoutTimeZone(TimeZoneKey timeZoneKey, String value)
     {
-        return TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER.withChronology(getChronology(timeZoneKey)).parseMillis(value);
+        return java.time.LocalDateTime.parse(value, NEW_TS_WITHOUT_TZ_FORMATTER).atZone(ZoneId.of("Z")).toInstant().toEpochMilli();
     }
 
     public static String printTimestampWithTimeZone(long timestampWithTimeZone)
