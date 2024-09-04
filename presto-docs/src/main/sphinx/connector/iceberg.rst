@@ -320,6 +320,9 @@ Property Name                                           Description             
 
 ``iceberg.metadata-delete-after-commit``                Set to ``true`` to delete the oldest metadata files after     ``false``
                                                         each commit.
+
+``iceberg.metrics-max-inferred-column``                 The maximum number of columns for which metrics               ``100``
+                                                        are collected.
 ======================================================= ============================================================= ============
 
 Table Properties
@@ -367,6 +370,9 @@ Property Name                             Description                           
 
 ``metadata_delete_after_commit``           Set to ``true`` to delete the oldest metadata file after         ``false``
                                            each commit.
+
+``metrics_max_inferred_column``            Optionally specifies the maximum number of columns for which     ``100``
+                                           metrics are collected.
 =======================================   ===============================================================   ============
 
 The table definition below specifies format ``ORC``, partitioning by columns ``c1`` and ``c2``,
@@ -706,6 +712,23 @@ example uses the earliest snapshot ID: ``2423571386296047175``
      INSERT    |       2 |  677209275408372885 | {orderkey=18016, custkey=403, orderstatus=O, totalprice=174070.99, orderdate=1996-03-19, orderpriority=1-URGENT, clerk=Clerk#000000629, shippriority=0, comment=ly. quickly ironic excuses are furiously. carefully ironic pack}
      INSERT    |       2 |  677209275408372885 | {orderkey=18017, custkey=958, orderstatus=F, totalprice=203091.02, orderdate=1993-03-26, orderpriority=1-URGENT, clerk=Clerk#000000830, shippriority=0, comment=sleep quickly bold requests. slyly pending pinto beans haggle in pla}
 
+``$refs`` Table
+^^^^^^^^^^^^^^^^^^^^
+* ``$refs`` : Details about Iceberg references including branches and tags. For more information see `Branching and Tagging <https://iceberg.apache.org/docs/nightly/branching/>`_.
+
+.. code-block:: sql
+
+    SELECT * FROM "ctas_nation$refs";
+
+.. code-block:: text
+
+        name     |  type  |     snapshot_id     | max_reference_age_in_ms | min_snapshots_to_keep | max_snapshot_age_in_ms
+     ------------+--------+---------------------+-------------------------+-----------------------+------------------------
+      main       | BRANCH | 3074797416068623476 | NULL                    | NULL                  | NULL
+      testBranch | BRANCH | 3374797416068698476 | NULL                    | NULL                  | NULL
+      testTag    | TAG    | 4686954189838128572 | 10                      | NULL                  | NULL
+
+
 Procedures
 ----------
 
@@ -766,19 +789,42 @@ procedure on the catalog's ``system`` schema::
 Rollback to Snapshot
 ^^^^^^^^^^^^^^^^^^^^
 
-Roll back a table to a specific snapshot ID. Iceberg can roll back to a specific snapshot ID by using the ``rollback_to_snapshot`` procedure on Iceberg`s ``system`` schema::
+Rollback a table to a specific snapshot ID. Iceberg can rollback to a specific snapshot ID by using the ``rollback_to_snapshot`` procedure on Iceberg's ``system`` schema::
 
-    CALL iceberg.system.rollback_to_snapshot('table_name', 'snapshot_id');
+    CALL iceberg.system.rollback_to_snapshot('schema_name', 'table_name', snapshot_id);
 
 The following arguments are available:
 
 ===================== ========== =============== =======================================================================
 Argument Name         required   type            Description
 ===================== ========== =============== =======================================================================
-``table``             ✔️          string          Name of the table to update
+``schema``            ✔️          string          Schema of the table to update
+
+``table_name``        ✔️          string          Name of the table to update
 
 ``snapshot_id``       ✔️          long            Snapshot ID to rollback to
 ===================== ========== =============== =======================================================================
+
+Rollback to Timestamp
+^^^^^^^^^^^^^^^^^^^^^
+
+Rollback a table to a given point in time. Iceberg can rollback to a specific point in time by using the ``rollback_to_timestamp`` procedure on Iceberg's ``system`` schema.
+
+The following arguments are available:
+
+===================== ========== =============== =======================================================================
+Argument Name         required   type            Description
+===================== ========== =============== =======================================================================
+``schema``            ✔️          string          Schema of the table to update
+
+``table_name``        ✔️          string          Name of the table to update
+
+``timestamp``         ✔️          timestamp       Timestamp to rollback to
+===================== ========== =============== =======================================================================
+
+Example::
+
+    CALL iceberg.system.rollback_to_timestamp('schema_name', 'table_name', TIMESTAMP '1995-04-26 00:00:00.000');
 
 Expire Snapshots
 ^^^^^^^^^^^^^^^^
@@ -1323,7 +1369,7 @@ Time Travel
 Iceberg and Presto Iceberg connector support time travel via table snapshots
 identified by unique snapshot IDs. The snapshot IDs are stored in the ``$snapshots``
 metadata table. You can rollback the state of a table to a previous snapshot ID.
-It also supports time travel query using VERSION (SYSTEM_VERSION) and TIMESTAMP (SYSTEM_TIME) options.
+It also supports time travel query using SYSTEM_VERSION (VERSION) and SYSTEM_TIME (TIMESTAMP) options.
 
 Example Queries
 ^^^^^^^^^^^^^^^
@@ -1504,6 +1550,40 @@ In the following query, the expression CURRENT_TIMESTAMP returns the current tim
     -----------+---------------+-----------+---------
             10 | united states |         1 | comment
     (1 row)
+
+Querying branches and tags
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Iceberg supports branches and tags which are named references to snapshots.
+
+Query Iceberg table by specifying the branch name:
+
+.. code-block:: sql
+
+    SELECT * FROM nation FOR SYSTEM_VERSION AS OF 'testBranch';
+
+.. code-block:: text
+
+     nationkey |      name     | regionkey | comment
+    -----------+---------------+-----------+---------
+            10 | united states |         1 | comment
+            20 | canada        |         2 | comment
+            30 | mexico        |         3 | comment
+    (3 rows)
+
+Query Iceberg table by specifying the tag name:
+
+.. code-block:: sql
+
+    SELECT * FROM nation FOR SYSTEM_VERSION AS OF 'testTag';
+
+.. code-block:: text
+
+     nationkey |      name     | regionkey | comment
+    -----------+---------------+-----------+---------
+            10 | united states |         1 | comment
+            20 | canada        |         2 | comment
+    (3 rows)
 
 Type mapping
 ------------
