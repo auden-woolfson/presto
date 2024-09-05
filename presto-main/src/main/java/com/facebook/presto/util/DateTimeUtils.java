@@ -40,6 +40,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -79,7 +82,7 @@ public final class DateTimeUtils
     private static final DateTimeFormatter TIMESTAMP_WITHOUT_TIME_ZONE_FORMATTER;
     private static final DateTimeFormatter TIMESTAMP_WITH_TIME_ZONE_FORMATTER;
     private static final DateTimeFormatter TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER;
-    private static final java.time.format.DateTimeFormatter NEW_TS_WITHOUT_TZ_FORMATTER;
+    private static final java.time.format.DateTimeFormatter TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER;
 
     static {
         DateTimeParser[] timestampWithoutTimeZoneParser = {
@@ -138,12 +141,34 @@ public final class DateTimeUtils
                 .toFormatter()
                 .withOffsetParsed();
 
-        NEW_TS_WITHOUT_TZ_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
-                .append(java.time.format.DateTimeFormatter.ofPattern("yyy-MM-dd"))
+        TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
+                .appendValue(ChronoField.YEAR_OF_ERA, 3, 19, SignStyle.NORMAL)
+                .appendLiteral("-")
+                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                .appendLiteral("-")
+                .appendValue(ChronoField.DAY_OF_MONTH, 2)
                 .appendLiteral(" ")
-                .append(java.time.format.DateTimeFormatter.ofPattern("HH:mm[:ss[.SSS[SSS[SSS]]]]"))
-                .toFormatter()
-                .withLocale(Locale.UK);
+                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                .appendLiteral(":")
+                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(":")
+                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+                .optionalStart()
+                .appendLiteral(".")
+                .appendValue(ChronoField.MILLI_OF_SECOND, 3)
+                .optionalStart()
+                .appendValue(ChronoField.MILLI_OF_SECOND, 3)
+                .optionalStart()
+                .appendValue(ChronoField.MILLI_OF_SECOND, 3)
+                .appendPattern("]]]]") // instead of calling optionalEnd four times
+                .optionalStart()
+                .appendLiteral(" ")
+                .optionalEnd()
+                .optionalStart()
+                .appendZoneOrOffsetId()
+                .optionalEnd()
+                .toFormatter();
     }
 
     /**
@@ -227,7 +252,13 @@ public final class DateTimeUtils
      */
     public static long parseTimestampWithoutTimeZone(String value)
     {
-        return java.time.LocalDateTime.parse(value, NEW_TS_WITHOUT_TZ_FORMATTER).atZone(ZoneId.of("Z")).toInstant().toEpochMilli();
+        LocalDateTime localDateTime = TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER.parseLocalDateTime(value);
+        try {
+            return (long) getLocalMillis.invokeExact(localDateTime);
+        }
+        catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -239,7 +270,15 @@ public final class DateTimeUtils
     @Deprecated
     public static long parseTimestampWithoutTimeZone(TimeZoneKey timeZoneKey, String value)
     {
-        return java.time.LocalDateTime.parse(value, NEW_TS_WITHOUT_TZ_FORMATTER).atZone(ZoneId.of("Z")).toInstant().toEpochMilli();
+        try {
+            return java.time.LocalDateTime.parse(value, TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER).atZone(ZoneId.of(timeZoneKey.getId())).toInstant().toEpochMilli();
+        }
+        catch (DateTimeParseException e) {
+            throw new RuntimeException(e);
+        }
+        catch (ArithmeticException e) {
+            throw new RuntimeException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
+        }
     }
 
     public static String printTimestampWithTimeZone(long timestampWithTimeZone)

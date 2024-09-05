@@ -11,13 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.facebook.presto.util;
 
 import com.facebook.presto.testing.assertions.Assert;
 import org.testng.annotations.Test;
 
-public class TestDateTimeUtil {
+public class TestDateTimeUtils {
 
     @Test(expectedExceptions = ArithmeticException.class)
     public void testLongOverflowHigh()
@@ -29,7 +28,8 @@ public class TestDateTimeUtil {
     public void testWorkingTimestamps()
     {
         try {
-            DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
+            long late = DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
+            System.out.println(late);
             DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
             DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
             DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
