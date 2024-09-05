@@ -35,7 +35,7 @@ public class TestDateTimeUtil {
             DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
         }
         catch (Exception e) {
-            Assert.fail();
+            Assert.fail(e.getMessage());
         }
     }
 }
