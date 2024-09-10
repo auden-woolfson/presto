@@ -13,7 +13,6 @@
  */
 package com.facebook.presto.util;
 
-import com.facebook.presto.testing.assertions.Assert;
 import org.testng.annotations.Test;
 
 public class TestDateTimeUtils {
