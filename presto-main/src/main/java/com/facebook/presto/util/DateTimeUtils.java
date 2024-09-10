@@ -273,11 +273,8 @@ public final class DateTimeUtils
         try {
             return java.time.LocalDateTime.parse(value, TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER).atZone(ZoneId.of(timeZoneKey.getId())).toInstant().toEpochMilli();
         }
-        catch (DateTimeParseException e) {
-            throw new RuntimeException(e);
-        }
         catch (ArithmeticException e) {
-            throw new RuntimeException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
+            throw new ArithmeticException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
         }
     }
 

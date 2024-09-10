@@ -27,15 +27,9 @@ public class TestDateTimeUtils {
     @Test
     public void testWorkingTimestamps()
     {
-        try {
-            long late = DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
-            System.out.println(late);
-            DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
-            DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
-            DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
-        }
-        catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        long late = DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
+        DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
+        DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
     }
 }
