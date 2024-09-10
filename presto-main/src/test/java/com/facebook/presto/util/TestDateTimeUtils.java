@@ -26,9 +26,10 @@ public class TestDateTimeUtils {
     @Test
     public void testWorkingTimestamps()
     {
-        long late = DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
+        DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
     }
 }
