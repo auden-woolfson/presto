@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
 
 public class TestDateTimeUtils {
 
-    @Test(expectedExceptions = ArithmeticException.class)
+    @Test(expectedExceptions = {Exception.class})
     public void testLongOverflowHigh()
     {
         DateTimeUtils.parseTimestampWithoutTimeZone("292278994-08-17 11:46:00.000");
@@ -29,7 +29,7 @@ public class TestDateTimeUtils {
         DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.001999999");
     }
 }

@@ -252,14 +252,13 @@ public final class DateTimeUtils
      */
     public static long parseTimestampWithoutTimeZone(String value)
     {
-        LocalDateTime localDateTime = TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER.parseLocalDateTime(value);
         try {
-            return (long) getLocalMillis.invokeExact(localDateTime);
+            return java.time.LocalDateTime.parse(value, TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER).atZone(ZoneId.of(TimeZoneKey.UTC_KEY.getId())).toInstant().toEpochMilli();
         }
-        catch (Throwable e) {
-            throw new RuntimeException(e);
+        catch (ArithmeticException e) {
+            throw new ArithmeticException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
         }
-    }
+   }
 
     /**
      * Parse a string (optionally containing a zone) as a value of TIMESTAMP type.
