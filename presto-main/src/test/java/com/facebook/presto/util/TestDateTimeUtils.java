@@ -30,6 +30,7 @@ public class TestDateTimeUtils {
         DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.001999999");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000000999");
+        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
     }
 }
