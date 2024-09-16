@@ -40,7 +40,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.ZoneId;
-import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -262,7 +261,7 @@ public final class DateTimeUtils
         catch (ArithmeticException e) {
             throw new ArithmeticException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
         }
-   }
+    }
 
     /**
      * Parse a string (optionally containing a zone) as a value of TIMESTAMP type.

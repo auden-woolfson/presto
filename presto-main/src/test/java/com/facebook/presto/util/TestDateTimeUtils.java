@@ -15,8 +15,8 @@ package com.facebook.presto.util;
 
 import org.testng.annotations.Test;
 
-public class TestDateTimeUtils {
-
+public class TestDateTimeUtils
+{
     @Test(expectedExceptions = {Exception.class})
     public void testLongOverflowHigh()
     {
