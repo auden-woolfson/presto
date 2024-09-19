@@ -33,6 +33,10 @@ public class TestDateTimeUtils
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999 UTC");
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999UTC");
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000000999");
+        DateTimeUtils.parseTimestampWithoutTimeZone("2023-01-02");
+        DateTimeUtils.parseTimestampWithoutTimeZone("1996-01-02");
+        DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321 +07:09");
+        DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321");
         DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
     }
 }
