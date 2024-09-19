@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -143,9 +144,10 @@ public final class DateTimeUtils
         TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
                 .appendValue(ChronoField.YEAR_OF_ERA, 3, 19, SignStyle.NORMAL)
                 .appendLiteral("-")
-                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL)
                 .appendLiteral("-")
-                .appendValue(ChronoField.DAY_OF_MONTH, 2)
+                .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NORMAL)
+                .optionalStart()
                 .appendLiteral(" ")
                 .appendValue(ChronoField.HOUR_OF_DAY, 2)
                 .appendLiteral(":")
@@ -170,6 +172,7 @@ public final class DateTimeUtils
                 .optionalEnd()
                 .optionalStart()
                 .appendZoneOrOffsetId()
+                .optionalEnd()
                 .optionalEnd()
                 .toFormatter();
     }
@@ -257,6 +260,14 @@ public final class DateTimeUtils
     {
         try {
             return java.time.LocalDateTime.parse(value, TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER).atZone(ZoneId.of(TimeZoneKey.UTC_KEY.getId())).toInstant().toEpochMilli();
+        }
+        catch (DateTimeParseException e) {
+            try {
+                return java.time.LocalDate.parse(value, TIMESTAMP_OPTIONAL_TIMEZONE_FORMATTER).atStartOfDay().atZone(ZoneId.of(TimeZoneKey.UTC_KEY.getId())).toInstant().toEpochMilli();
+            }
+            catch (Exception f) {
+                throw new RuntimeException(e);
+            }
         }
         catch (ArithmeticException e) {
             throw new ArithmeticException("timestamp could not be converted to epoch milliseconds due to numeric overflow");
