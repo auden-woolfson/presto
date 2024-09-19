@@ -15,6 +15,8 @@ package com.facebook.presto.util;
 
 import org.testng.annotations.Test;
 
+import static com.facebook.presto.testing.assertions.Assert.assertEquals;
+
 public class TestDateTimeUtils
 {
     @Test(expectedExceptions = {Exception.class})
@@ -26,17 +28,52 @@ public class TestDateTimeUtils
     @Test
     public void testWorkingTimestamps()
     {
-        DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
-        DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 09:01:00.000");
-        DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999 UTC");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999UTC");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000000999");
-        DateTimeUtils.parseTimestampWithoutTimeZone("2023-01-02");
-        DateTimeUtils.parseTimestampWithoutTimeZone("1996-01-02");
-        DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321 +07:09");
-        DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321");
-        DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
+        long actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("292278993-08-17 11:46:00.000");
+        long expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("292278993-08-17 11:46:00.000");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("2025-08-17 09:01:00.000");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("2025-08-17 09:01:00.000");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("1960-08-17 11:46:00.000");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("1960-08-17 11:46:00.000");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("0001-08-17 11:46:00.000999");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999 UTC");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("0001-08-17 11:46:00.000999 UTC");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999UTC");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("0001-08-17 11:46:00.000999UTC");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000000999");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("0001-08-17 11:46:00.000000999");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("2023-01-02");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("2023-01-02");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("1996-01-02");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("1996-01-02");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321 +07:09");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("2001-1-22 03:04:05.321 +07:09");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("2001-1-22 03:04:05.321");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("2001-1-22 03:04:05.321");
+        assertEquals(actualMillis, expectedMillis);
+
+        actualMillis = DateTimeUtils.parseTimestampWithoutTimeZone("0001-08-17 11:46:00.000999999");
+        expectedMillis = DateTimeUtils.parseTimestampWithoutTimeZoneOld("0001-08-17 11:46:00.000999999");
+        assertEquals(actualMillis, expectedMillis);
     }
 }

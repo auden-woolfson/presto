@@ -266,6 +266,16 @@ public final class DateTimeUtils
         }
     }
 
+    public static long parseTimestampWithoutTimeZoneOld(String value)
+    {
+        LocalDateTime localDateTime = TIMESTAMP_WITH_OR_WITHOUT_TIME_ZONE_FORMATTER.parseLocalDateTime(value);
+        try {
+            return (long) getLocalMillis.invokeExact(localDateTime);
+        }
+        catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
     /**
      * Parse a string (optionally containing a zone) as a value of TIMESTAMP type.
      * If the string doesn't specify a zone, it is interpreted in {@code timeZoneKey} zone.
