@@ -89,6 +89,12 @@ public class Int64TimeAndTimestampMicrosPlainValuesDecoder
         return INSTANCE_SIZE + sizeOf(byteBuffer);
     }
 
+    @Override
+    public boolean getWithTimezone()
+    {
+        return withTimezone;
+    }
+
     private interface PackFunction
     {
         long pack(long millis);

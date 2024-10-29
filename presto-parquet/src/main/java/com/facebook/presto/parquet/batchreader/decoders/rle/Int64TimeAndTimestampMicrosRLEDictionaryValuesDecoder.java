@@ -131,6 +131,12 @@ public class Int64TimeAndTimestampMicrosRLEDictionaryValuesDecoder
         return INSTANCE_SIZE + (dictionary == null ? 0 : dictionary.getRetainedSizeInBytes()) + sizeOf(currentBuffer);
     }
 
+    @Override
+    public boolean getWithTimezone()
+    {
+        return withTimezone;
+    }
+
     private interface PackFunction
     {
         long pack(long millis);

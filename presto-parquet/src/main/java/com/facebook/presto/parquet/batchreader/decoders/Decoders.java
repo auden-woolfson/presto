@@ -129,12 +129,14 @@ public class Decoders
                 case FLOAT:
                     return new Int32PlainValuesDecoder(buffer, offset, length);
                 case INT64: {
-                    if (isTimeStampMicrosType(columnDescriptor) || isTimeMicrosType(columnDescriptor)) {
+                    if (isTimeStampMicrosType(columnDescriptor)) {
                         LogicalTypeAnnotation.TimestampLogicalTypeAnnotation typeAnnotation = (LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) columnDescriptor.getPrimitiveType().getLogicalTypeAnnotation();
                         boolean withTimezone = typeAnnotation.isAdjustedToUTC();
                         return new Int64TimeAndTimestampMicrosPlainValuesDecoder(buffer, offset, length, withTimezone);
                     }
-
+                    if (isTimeMicrosType(columnDescriptor)) {
+                        return new Int64TimeAndTimestampMicrosPlainValuesDecoder(buffer, offset, length, false);
+                    }
                     if (isShortDecimalType(columnDescriptor)) {
                         return new Int64ShortDecimalPlainValuesDecoder(buffer, offset, length);
                     }
@@ -187,10 +189,13 @@ public class Decoders
                     return new Int32RLEDictionaryValuesDecoder(bitWidth, inputStream, (IntegerDictionary) dictionary);
                 }
                 case INT64: {
-                    if (isTimeStampMicrosType(columnDescriptor) || isTimeMicrosType(columnDescriptor)) {
+                    if (isTimeStampMicrosType(columnDescriptor)) {
                         LogicalTypeAnnotation.TimestampLogicalTypeAnnotation typeAnnotation = (LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) columnDescriptor.getPrimitiveType().getLogicalTypeAnnotation();
                         boolean withTimezone = typeAnnotation.isAdjustedToUTC();
                         return new Int64TimeAndTimestampMicrosRLEDictionaryValuesDecoder(bitWidth, inputStream, (LongDictionary) dictionary, withTimezone);
+                    }
+                    if (isTimeMicrosType(columnDescriptor)) {
+                        return new Int64TimeAndTimestampMicrosRLEDictionaryValuesDecoder(bitWidth, inputStream, (LongDictionary) dictionary, false);
                     }
                     if (isShortDecimalType(columnDescriptor)) {
                         return new Int64RLEDictionaryValuesDecoder(bitWidth, inputStream, (LongDictionary) dictionary);
@@ -232,12 +237,14 @@ public class Decoders
                     return new Int32DeltaBinaryPackedValuesDecoder(valueCount, inputStream);
                 }
                 case INT64: {
-                    if (isTimeStampMicrosType(columnDescriptor) || isTimeMicrosType(columnDescriptor)) {
+                    if (isTimeStampMicrosType(columnDescriptor)) {
                         LogicalTypeAnnotation.TimestampLogicalTypeAnnotation typeAnnotation = (LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) columnDescriptor.getPrimitiveType().getLogicalTypeAnnotation();
                         boolean withTimezone = typeAnnotation.isAdjustedToUTC();
                         return new Int64TimeAndTimestampMicrosDeltaBinaryPackedValuesDecoder(valueCount, inputStream, withTimezone);
                     }
-
+                    if (isTimeMicrosType(columnDescriptor)) {
+                        return new Int64TimeAndTimestampMicrosDeltaBinaryPackedValuesDecoder(valueCount, inputStream, false);
+                    }
                     if (isShortDecimalType(columnDescriptor)) {
                         ValuesReader parquetReader = getParquetReader(encoding, columnDescriptor, valueCount, inputStream);
                         return new Int64ShortDecimalDeltaValuesDecoder(parquetReader);
