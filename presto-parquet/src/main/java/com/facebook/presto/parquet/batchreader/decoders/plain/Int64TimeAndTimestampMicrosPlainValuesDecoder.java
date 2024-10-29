@@ -33,9 +33,9 @@ public class Int64TimeAndTimestampMicrosPlainValuesDecoder
 
     private int bufferOffset;
 
-    private boolean withTimezone;
+    private final boolean withTimezone;
 
-    private PackFunction packFunction;
+    private final PackFunction packFunction;
 
     public Int64TimeAndTimestampMicrosPlainValuesDecoder(byte[] byteBuffer, int bufferOffset, int length)
     {

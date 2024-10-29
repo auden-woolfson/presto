@@ -36,9 +36,9 @@ public class Int64TimeAndTimestampMicrosRLEDictionaryValuesDecoder
 
     private final LongDictionary dictionary;
 
-    private boolean withTimezone;
+    private final boolean withTimezone;
 
-    private PackFunction packFunction;
+    private final PackFunction packFunction;
 
     public Int64TimeAndTimestampMicrosRLEDictionaryValuesDecoder(int bitWidth, InputStream inputStream, LongDictionary dictionary, boolean withTimezone)
     {
