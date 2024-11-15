@@ -1057,6 +1057,8 @@ public abstract class IcebergDistributedSmokeTestBase
     @Test
     public void testPartitionedByTime()
     {
+        testSelectOrPartitionedByTime(getSession(), false, FileFormat.PARQUET);
+        testSelectOrPartitionedByTime(getSession(), false, FileFormat.ORC);
         testSelectOrPartitionedByTime(getSession(), true, FileFormat.PARQUET);
         testSelectOrPartitionedByTime(getSession(), true, FileFormat.ORC);
     }
