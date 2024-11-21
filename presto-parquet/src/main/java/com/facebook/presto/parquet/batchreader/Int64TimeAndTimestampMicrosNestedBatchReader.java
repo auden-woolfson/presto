@@ -66,10 +66,6 @@ public class Int64TimeAndTimestampMicrosNestedBatchReader
         boolean[] isNull = new boolean[newBatchSize];
         int offset = 0;
         for (ValuesDecoderContext valuesDecoderContext : definitionLevelDecodingContext.getValuesDecoderContexts()) {
-            boolean isWithTimezone = ((LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) columnDescriptor.getPrimitiveType().getLogicalTypeAnnotation()).isAdjustedToUTC();
-            if (((Int64TimeAndTimestampMicrosValuesDecoder) valuesDecoderContext.getValuesDecoder()).getWithTimezone() != isWithTimezone) {
-                System.out.println("FAILING 1");
-            }
             ((Int64TimeAndTimestampMicrosValuesDecoder) valuesDecoderContext.getValuesDecoder()).readNext(values, offset, valuesDecoderContext.getNonNullCount());
 
             int valueDestinationIndex = offset + valuesDecoderContext.getValueCount() - 1;
@@ -118,10 +114,6 @@ public class Int64TimeAndTimestampMicrosNestedBatchReader
         long[] values = new long[newBatchSize];
         int offset = 0;
         for (ValuesDecoderContext valuesDecoderContext : definitionLevelDecodingContext.getValuesDecoderContexts()) {
-            boolean isWithTimezone = ((LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) columnDescriptor.getPrimitiveType().getLogicalTypeAnnotation()).isAdjustedToUTC();
-            if (((Int64TimeAndTimestampMicrosValuesDecoder) valuesDecoderContext.getValuesDecoder()).getWithTimezone() != isWithTimezone) {
-                System.out.println("FAILING 2");
-            }
             ((Int64TimeAndTimestampMicrosValuesDecoder) valuesDecoderContext.getValuesDecoder()).readNext(values, offset, valuesDecoderContext.getNonNullCount());
             offset += valuesDecoderContext.getValueCount();
         }
