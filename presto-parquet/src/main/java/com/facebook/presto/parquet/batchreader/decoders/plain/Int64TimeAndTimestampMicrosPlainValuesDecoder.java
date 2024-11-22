@@ -68,7 +68,7 @@ public class Int64TimeAndTimestampMicrosPlainValuesDecoder
 
         while (offset < endOffset) {
             long valueMillis = MICROSECONDS.toMillis(BytesUtils.getLong(localByteBuffer, localBufferOffset));
-            values[offset++] = packFunction.pack(valueMillis);
+            values[offset++] = valueMillis;
             localBufferOffset += 8;
         }
 

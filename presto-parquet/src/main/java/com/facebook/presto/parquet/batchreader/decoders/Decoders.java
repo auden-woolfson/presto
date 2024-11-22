@@ -135,7 +135,7 @@ public class Decoders
                         return new Int64TimeAndTimestampMicrosPlainValuesDecoder(buffer, offset, length, withTimezone);
                     }
                     if (isTimeMicrosType(columnDescriptor)) {
-                        return new Int64TimeAndTimestampMicrosPlainValuesDecoder(buffer, offset, length, false);
+                        return new Int64TimeAndTimestampMicrosPlainValuesDecoder(buffer, offset, length);
                     }
                     if (isShortDecimalType(columnDescriptor)) {
                         return new Int64ShortDecimalPlainValuesDecoder(buffer, offset, length);
