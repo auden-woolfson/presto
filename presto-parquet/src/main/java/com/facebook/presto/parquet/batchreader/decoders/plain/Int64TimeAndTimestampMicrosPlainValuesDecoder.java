@@ -75,7 +75,6 @@ public class Int64TimeAndTimestampMicrosPlainValuesDecoder
             }
             localBufferOffset += 8;
         }
-
         bufferOffset = localBufferOffset;
     }
 
