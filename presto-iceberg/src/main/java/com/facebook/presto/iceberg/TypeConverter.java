@@ -311,7 +311,7 @@ public final class TypeConverter
             return HIVE_DOUBLE.getTypeInfo();
         }
         if (TimeType.TIME.equals(type)) {
-            return HIVE_INT.getTypeInfo();
+            return HIVE_LONG.getTypeInfo();
         }
         if (type instanceof VarcharType) {
             VarcharType varcharType = (VarcharType) type;
