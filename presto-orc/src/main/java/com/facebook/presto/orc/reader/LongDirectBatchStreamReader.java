@@ -170,7 +170,10 @@ public class LongDirectBatchStreamReader
         if (type instanceof TimeType) {
             long[] values = new long[nextBatchSize];
             dataStream.next(values, nextBatchSize);
-            return new LongArrayBlock(nextBatchSize, Optional.empty(), values);
+            LongArrayBlock result = new LongArrayBlock(nextBatchSize, Optional.empty(), values);
+            for (int i = 0; i < result.getPositionCount(); i++) {
+                // unit conversion?
+            }
         }
         if (type instanceof IntegerType || type instanceof DateType) {
             int[] values = new int[nextBatchSize];
