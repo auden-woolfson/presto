@@ -15,6 +15,7 @@ package com.facebook.presto.orc.writer;
 
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.type.FixedWidthType;
+import com.facebook.presto.common.type.TimeType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.orc.ColumnWriterOptions;
 import com.facebook.presto.orc.DwrfDataEncryptor;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongFunction;
 import java.util.function.Supplier;
 
 import static com.facebook.presto.orc.OrcEncoding.DWRF;
@@ -56,8 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class LongColumnWriter
-        implements ColumnWriter
-{
+        implements ColumnWriter {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(LongColumnWriter.class).instanceSize();
     private final int column;
     private final int sequence;
@@ -69,6 +70,7 @@ public class LongColumnWriter
 
     private final List<ColumnStatistics> rowGroupColumnStatistics = new ArrayList<>();
     private final CompressedMetadataWriter metadataWriter;
+    private final LongFunction<Long> normalizeLong;
     private long columnStatisticsRetainedSizeInBytes;
     private PresentOutputStream presentStream;
 
@@ -85,8 +87,7 @@ public class LongColumnWriter
             Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             Supplier<LongValueStatisticsBuilder> statisticsBuilderSupplier,
-            MetadataWriter metadataWriter)
-    {
+            MetadataWriter metadataWriter) {
         checkArgument(column >= 0, "column is negative");
         checkArgument(sequence >= 0, "sequence is negative");
         checkArgument(type instanceof FixedWidthType, "Type is not instance of FixedWidthType");
@@ -102,8 +103,7 @@ public class LongColumnWriter
         if (orcEncoding == DWRF) {
             this.columnEncoding = new ColumnEncoding(DIRECT, 0);
             this.dataStream = new LongOutputStreamDwrf(columnWriterOptions, dwrfEncryptor, true, DATA);
-        }
-        else {
+        } else {
             this.columnEncoding = new ColumnEncoding(DIRECT_V2, 0);
             this.dataStream = new LongOutputStreamV2(columnWriterOptions, true, DATA);
         }
@@ -111,41 +111,41 @@ public class LongColumnWriter
         this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
         this.statisticsBuilderSupplier = requireNonNull(statisticsBuilderSupplier, "statisticsBuilderSupplier is null");
         this.statisticsBuilder = statisticsBuilderSupplier.get();
+
+        if (this.type instanceof TimeType) {
+            this.normalizeLong = longValue -> longValue * 1000;
+        } else {
+            this.normalizeLong = longValue -> longValue;
+        }
     }
 
     @Override
-    public Map<Integer, ColumnEncoding> getColumnEncodings()
-    {
+    public Map<Integer, ColumnEncoding> getColumnEncodings() {
         return ImmutableMap.of(column, columnEncoding);
     }
 
     @Override
-    public void beginRowGroup()
-    {
+    public void beginRowGroup() {
         presentStream.recordCheckpoint();
         beginDataRowGroup();
     }
 
-    void beginDataRowGroup()
-    {
+    void beginDataRowGroup() {
         dataStream.recordCheckpoint();
     }
 
-    void updatePresentStream(PresentOutputStream updatedPresentStream)
-    {
+    void updatePresentStream(PresentOutputStream updatedPresentStream) {
         requireNonNull(updatedPresentStream, "updatedPresentStream is null");
         checkState(presentStream.getBufferedBytes() == 0, "Present stream has some content");
         presentStream = updatedPresentStream;
     }
 
-    void updateRawSize(long rawSize)
-    {
+    void updateRawSize(long rawSize) {
         statisticsBuilder.incrementRawSize(rawSize);
     }
 
     @Override
-    public long writeBlock(Block block)
-    {
+    public long writeBlock(Block block) {
         checkState(!closed);
         checkArgument(block.getPositionCount() > 0, "Block is empty");
 
@@ -158,7 +158,7 @@ public class LongColumnWriter
         int nonNullValueCount = 0;
         for (int position = 0; position < block.getPositionCount(); position++) {
             if (!block.isNull(position)) {
-                long value = type.getLong(block, position);
+                long value = this.normalizeLong.apply(type.getLong(block, position));
                 writeValue(value);
                 nonNullValueCount++;
             }
@@ -169,15 +169,13 @@ public class LongColumnWriter
         return rawSize;
     }
 
-    void writeValue(long value)
-    {
+    void writeValue(long value) {
         dataStream.writeLong(value);
         statisticsBuilder.addValue(value);
     }
 
     @Override
-    public Map<Integer, ColumnStatistics> finishRowGroup()
-    {
+    public Map<Integer, ColumnStatistics> finishRowGroup() {
         checkState(!closed);
         ColumnStatistics statistics = statisticsBuilder.buildColumnStatistics();
         rowGroupColumnStatistics.add(statistics);
@@ -187,24 +185,21 @@ public class LongColumnWriter
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         closed = true;
         dataStream.close();
         presentStream.close();
     }
 
     @Override
-    public Map<Integer, ColumnStatistics> getColumnStripeStatistics()
-    {
+    public Map<Integer, ColumnStatistics> getColumnStripeStatistics() {
         checkState(closed);
         return ImmutableMap.of(column, ColumnStatistics.mergeColumnStatistics(rowGroupColumnStatistics));
     }
 
     @Override
     public List<StreamDataOutput> getIndexStreams(Optional<List<? extends StreamCheckpoint>> prependCheckpoints)
-            throws IOException
-    {
+            throws IOException {
         checkState(closed);
 
         List<RowGroupIndex> rowGroupIndexes = buildRowGroupIndexes(compressed, rowGroupColumnStatistics, prependCheckpoints, presentStream, dataStream);
@@ -214,8 +209,7 @@ public class LongColumnWriter
     }
 
     @Override
-    public List<StreamDataOutput> getDataStreams()
-    {
+    public List<StreamDataOutput> getDataStreams() {
         checkState(closed);
 
         ImmutableList.Builder<StreamDataOutput> outputDataStreams = ImmutableList.builder();
@@ -225,20 +219,17 @@ public class LongColumnWriter
     }
 
     @Override
-    public long getBufferedBytes()
-    {
+    public long getBufferedBytes() {
         return dataStream.getBufferedBytes() + presentStream.getBufferedBytes();
     }
 
     @Override
-    public long getRetainedBytes()
-    {
+    public long getRetainedBytes() {
         return INSTANCE_SIZE + dataStream.getRetainedBytes() + presentStream.getRetainedBytes() + columnStatisticsRetainedSizeInBytes;
     }
 
     @Override
-    public void reset()
-    {
+    public void reset() {
         closed = false;
         dataStream.reset();
         presentStream.reset();
