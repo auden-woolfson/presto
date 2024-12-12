@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.function.LongFunction;
 
 import static com.facebook.presto.orc.metadata.Stream.StreamKind.DATA;
 import static com.facebook.presto.orc.metadata.Stream.StreamKind.PRESENT;
@@ -60,6 +61,7 @@ public class LongDirectBatchStreamReader
 
     private final Type type;
     private final StreamDescriptor streamDescriptor;
+    private final LongFunction<Long> convertUnits;
 
     private int readOffset;
     private int nextBatchSize;
@@ -89,6 +91,12 @@ public class LongDirectBatchStreamReader
         this.type = type;
         this.streamDescriptor = requireNonNull(streamDescriptor, "stream is null");
         this.systemMemoryContext = requireNonNull(systemMemoryContext, "systemMemoryContext is null");
+        if (this.type instanceof TimeType) {
+            this.convertUnits = longValue -> longValue / 1000;
+        }
+        else {
+            this.convertUnits = longValue -> longValue;
+        }
     }
 
     @Override

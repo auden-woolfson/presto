@@ -70,7 +70,7 @@ public class LongColumnWriter
 
     private final List<ColumnStatistics> rowGroupColumnStatistics = new ArrayList<>();
     private final CompressedMetadataWriter metadataWriter;
-    private final LongFunction<Long> normalizeLong;
+    private final LongFunction<Long> convertUnits;
     private long columnStatisticsRetainedSizeInBytes;
     private PresentOutputStream presentStream;
 
@@ -113,9 +113,9 @@ public class LongColumnWriter
         this.statisticsBuilder = statisticsBuilderSupplier.get();
 
         if (this.type instanceof TimeType) {
-            this.normalizeLong = longValue -> longValue * 1000;
+            this.convertUnits = longValue -> longValue * 1000;
         } else {
-            this.normalizeLong = longValue -> longValue;
+            this.convertUnits = longValue -> longValue;
         }
     }
 
@@ -158,7 +158,7 @@ public class LongColumnWriter
         int nonNullValueCount = 0;
         for (int position = 0; position < block.getPositionCount(); position++) {
             if (!block.isNull(position)) {
-                long value = this.normalizeLong.apply(type.getLong(block, position));
+                long value = this.convertUnits.apply(type.getLong(block, position));
                 writeValue(value);
                 nonNullValueCount++;
             }
