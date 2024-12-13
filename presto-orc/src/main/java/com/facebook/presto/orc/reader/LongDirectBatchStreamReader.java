@@ -219,6 +219,13 @@ public class LongDirectBatchStreamReader
         dataStream.next(longNonNullValueTemp, nonNullCount);
 
         long[] result = unpackLongNulls(longNonNullValueTemp, isNull);
+        if (type instanceof TimeType) {
+            for (int i = 0; i < result.length; i++) {
+                if (!isNull[i]) {
+                    result[i] = convertUnits.apply(result[i]);
+                }
+            }
+        }
 
         return new LongArrayBlock(nextBatchSize, Optional.of(isNull), result);
     }
