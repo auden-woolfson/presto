@@ -92,7 +92,7 @@ public class LongDirectBatchStreamReader
         this.streamDescriptor = requireNonNull(streamDescriptor, "stream is null");
         this.systemMemoryContext = requireNonNull(systemMemoryContext, "systemMemoryContext is null");
         if (this.type instanceof TimeType) {
-            this.convertUnits = longValue -> longValue / 1000;
+            this.convertUnits = longValue -> Math.floorDiv(longValue, 1000L);
         }
         else {
             this.convertUnits = longValue -> longValue;
@@ -170,10 +170,10 @@ public class LongDirectBatchStreamReader
         if (type instanceof TimeType) {
             long[] values = new long[nextBatchSize];
             dataStream.next(values, nextBatchSize);
-            LongArrayBlock result = new LongArrayBlock(nextBatchSize, Optional.empty(), values);
-            for (int i = 0; i < result.getPositionCount(); i++) {
-                // unit conversion?
+            for (int i = 0; i < values.length; i++) {
+                values[i] = convertUnits.apply(values[i]);
             }
+            return new LongArrayBlock(nextBatchSize, Optional.empty(), values);
         }
         if (type instanceof IntegerType || type instanceof DateType) {
             int[] values = new int[nextBatchSize];

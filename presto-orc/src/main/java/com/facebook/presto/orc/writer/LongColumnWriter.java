@@ -116,7 +116,7 @@ public class LongColumnWriter
         this.statisticsBuilder = statisticsBuilderSupplier.get();
 
         if (this.type instanceof TimeType) {
-            this.convertUnits = longValue -> longValue * 1000;
+            this.convertUnits = longValue -> Math.multiplyExact(longValue, 1000L);
         }
         else {
             this.convertUnits = longValue -> longValue;
