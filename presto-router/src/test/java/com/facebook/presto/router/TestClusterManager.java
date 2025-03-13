@@ -26,6 +26,8 @@ import com.facebook.presto.execution.QueryState;
 import com.facebook.presto.jdbc.PrestoResultSet;
 import com.facebook.presto.router.cluster.ClusterManager;
 import com.facebook.presto.router.cluster.ClusterManager.ClusterStatusTracker;
+import com.facebook.presto.router.cluster.RemoteInfoFactory;
+import com.facebook.presto.router.cluster.RemoteStateConfig;
 import com.facebook.presto.server.testing.TestingPrestoServer;
 import com.facebook.presto.tpch.TpchPlugin;
 import com.google.common.collect.ImmutableList;
@@ -47,6 +49,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
@@ -67,6 +73,9 @@ public class TestClusterManager
     private ClusterManager clusterManager;
     private ClusterStatusTracker clusterStatusTracker;
     private File configFile;
+    private RemoteInfoFactory remoteInfoFactory;
+    private RemoteStateConfig remoteStateConfig;
+    private RouterConfig routerConfig;
 
     @BeforeClass
     public void setup()
@@ -74,8 +83,8 @@ public class TestClusterManager
     {
         Logging.initialize();
 
-        // set up server
-        ImmutableList.Builder builder = ImmutableList.builder();
+        // Set up servers
+        ImmutableList.Builder<TestingPrestoServer> builder = ImmutableList.builder();
         for (int i = 0; i < NUM_CLUSTERS; ++i) {
             builder.add(createPrestoServer());
         }
@@ -84,9 +93,11 @@ public class TestClusterManager
 
         Bootstrap app = new Bootstrap(
                 new TestingNodeModule("test"),
-                new TestingHttpServerModule(), new JsonModule(),
+                new TestingHttpServerModule(),
+                new JsonModule(),
                 new JaxrsModule(true),
-                new RouterModule());
+                new RouterModule()
+        );
 
         Injector injector = app.doNotInitializeLogging()
                 .setRequiredConfigurationProperty("router.config-file", configFile.getAbsolutePath())
@@ -96,6 +107,11 @@ public class TestClusterManager
         httpServerInfo = injector.getInstance(HttpServerInfo.class);
         clusterStatusTracker = injector.getInstance(ClusterStatusTracker.class);
         clusterManager = injector.getInstance(ClusterManager.class);
+
+        // Store dependencies for later use
+        remoteInfoFactory = injector.getInstance(RemoteInfoFactory.class);
+        remoteStateConfig = injector.getInstance(RemoteStateConfig.class);
+        routerConfig = injector.getInstance(RouterConfig.class);
     }
 
     @AfterClass(alwaysRun = true)
@@ -135,12 +151,13 @@ public class TestClusterManager
 
     @Test
     public void testConfigReload()
-            throws IOException, InterruptedException
+            throws IOException, InterruptedException, BrokenBarrierException, TimeoutException
     {
         Path configFilePath = configFile.toPath();
         assertEquals(clusterManager.getAllClusters().size(), 3);
 
-        System.out.println(configFilePath);
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        ClusterManager barrierClusterManager = new BarrierClusterManager(routerConfig, remoteInfoFactory, remoteStateConfig, barrier);
 
         String originalConfigContent = new String(Files.readAllBytes(configFilePath));
         String modifiedConfigContent = originalConfigContent.replaceAll("\"members\"\\s*:\\s*\\[.*?\\]", "\"members\": []");
@@ -148,16 +165,16 @@ public class TestClusterManager
         try (FileOutputStream fos = new FileOutputStream(configFile, false)) {
             fos.write(modifiedConfigContent.getBytes());
         }
-        Thread.sleep(3000);
+        barrier.await(5, SECONDS);
 
-        assertEquals(clusterManager.getAllClusters().size(), 0);
+        assertEquals(barrierClusterManager.getAllClusters().size(), 0);
 
         try (FileOutputStream fos = new FileOutputStream(configFile, false)) {
             fos.write(originalConfigContent.getBytes());
         }
-        Thread.sleep(3000);
+        barrier.await(5, SECONDS);
 
-        assertEquals(clusterManager.getAllClusters().size(), 3);
+        assertEquals(barrierClusterManager.getAllClusters().size(), 3);
     }
 
     private void assertQueryState()
