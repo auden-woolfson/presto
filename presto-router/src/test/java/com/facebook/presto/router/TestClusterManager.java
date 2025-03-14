@@ -153,12 +153,12 @@ public class TestClusterManager
     public void testConfigReload()
             throws IOException, InterruptedException, BrokenBarrierException, TimeoutException
     {
-        Path configFilePath = configFile.toPath();
         assertEquals(clusterManager.getAllClusters().size(), 3);
 
         CyclicBarrier barrier = new CyclicBarrier(2);
-        ClusterManager barrierClusterManager = new BarrierClusterManager(routerConfig, remoteInfoFactory, remoteStateConfig, barrier);
+        clusterManager = new BarrierClusterManager(routerConfig, remoteInfoFactory, remoteStateConfig, barrier);
 
+        Path configFilePath = configFile.toPath();
         String originalConfigContent = new String(Files.readAllBytes(configFilePath));
         String modifiedConfigContent = originalConfigContent.replaceAll("\"members\"\\s*:\\s*\\[.*?\\]", "\"members\": []");
 
@@ -167,14 +167,14 @@ public class TestClusterManager
         }
         barrier.await(5, SECONDS);
 
-        assertEquals(barrierClusterManager.getAllClusters().size(), 0);
+        assertEquals(clusterManager.getAllClusters().size(), 0);
 
         try (FileOutputStream fos = new FileOutputStream(configFile, false)) {
             fos.write(originalConfigContent.getBytes());
         }
         barrier.await(5, SECONDS);
 
-        assertEquals(barrierClusterManager.getAllClusters().size(), 3);
+        assertEquals(clusterManager.getAllClusters().size(), 3);
     }
 
     private void assertQueryState()
