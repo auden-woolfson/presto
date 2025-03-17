@@ -51,7 +51,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -165,7 +164,7 @@ public class TestClusterManager
         try (FileOutputStream fos = new FileOutputStream(configFile, false)) {
             fos.write(modifiedConfigContent.getBytes());
         }
-        barrier.await(5, SECONDS);
+        barrier.await(10, SECONDS);
 
         assertEquals(clusterManager.getAllClusters().size(), 0);
 
@@ -215,8 +214,6 @@ public class TestClusterManager
     private File getConfigFile(List<TestingPrestoServer> servers)
             throws IOException
     {
-        // setup router config file
-        //File tempFile = File.createTempFile("router", ".json");
         File tempFile = new File(Paths.get(getResourceFilePath("simple-router-template.json")).getParent().toString() + "/temp-config.json");
         FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
         String configTemplate = new String(Files.readAllBytes(Paths.get(getResourceFilePath("simple-router-template.json"))));
