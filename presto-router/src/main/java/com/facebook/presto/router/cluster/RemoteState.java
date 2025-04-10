@@ -29,7 +29,6 @@ import io.airlift.units.Duration;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 import java.net.URI;
 import java.time.Instant;
@@ -59,7 +58,6 @@ public abstract class RemoteState
     private final HttpClient httpClient;
     private final URI remoteUri;
     private final Optional<String> routerUserCredentials;
-    public final URI remoteUri;
     private final AtomicReference<Future<?>> future = new AtomicReference<>();
     private final AtomicLong lastUpdateNanos = new AtomicLong();
     private final AtomicLong lastWarningLogged = new AtomicLong();

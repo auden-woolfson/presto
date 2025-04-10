@@ -86,8 +86,6 @@ public class RouterModule
         NodeVersion nodeVersion = new NodeVersion(serverConfig.getPrestoVersion());
         binder.bind(NodeVersion.class).toInstance(nodeVersion);
 
-        binder.bind(ClusterStatusTracker.class).in(Scopes.SINGLETON);
-
         binder.bind(PredictorManager.class).in(Scopes.SINGLETON);
         binder.bind(RemoteQueryFactory.class).in(Scopes.SINGLETON);
 
