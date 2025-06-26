@@ -13,11 +13,11 @@
  */
 package com.facebook.presto.elasticsearch.decoders;
 
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
 import org.elasticsearch.common.document.DocumentField;
-import org.elasticsearch.search.SearchHit;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -46,7 +46,7 @@ public class TimestampDecoder
     }
 
     @Override
-    public void decode(SearchHit hit, Supplier<Object> getter, BlockBuilder output)
+    public void decode(Hit hit, Supplier<Object> getter, BlockBuilder output)
     {
         DocumentField documentField = hit.getFields().get(path);
         Object value = null;
