@@ -28,6 +28,16 @@
         <air.check.skip-modernizer>true</air.check.skip-modernizer>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.facebook.presto</groupId>
+            <artifactId>redis-hbo-provider</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

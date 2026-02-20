@@ -8,6 +8,10 @@
             <include>NOTICE</include>
             <include>README.txt</include>
         </directory>
+        <fileSet>
+            <directory>${project.build.directory}/dependency/redis-hbo-provider-${project.version}</directory>
+            <outputDirectory>plugin/redis-hbo-provider</outputDirectory>
+        </fileSet>
     </fileSet>
 
     <!-- Launcher -->
