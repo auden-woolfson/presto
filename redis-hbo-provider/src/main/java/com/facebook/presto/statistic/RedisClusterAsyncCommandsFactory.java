@@ -21,6 +21,7 @@ import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
 
 import java.net.URI;
+import java.util.Optional;
 
 public class RedisClusterAsyncCommandsFactory
 {
@@ -34,12 +35,23 @@ public class RedisClusterAsyncCommandsFactory
     public static RedisClient getRedisClient(RedisProviderConfig redisProviderConfig)
     {
         URI serverUri = URI.create(redisProviderConfig.getServerUri());
-        RedisURI redisURI = RedisURI.builder()
+        RedisURI.Builder redisUriBuilder = RedisURI.builder()
                 .withHost(serverUri.getHost())
-                .withPort(serverUri.getPort())
-                .withAuthentication("default", "yourpassword")
-                .build();
-        return RedisClient.create(redisURI);
+                .withPort(serverUri.getPort());
+
+        Optional<String> username = Optional.of(redisProviderConfig.getRedisUsername());
+        Optional<String> password = Optional.of(redisProviderConfig.getRedisPassword());
+
+        if (!password.isEmpty()) {
+            if (!username.isEmpty()) {
+                redisUriBuilder.withAuthentication(username.get(), password.get());
+            }
+            else {
+                redisUriBuilder.withPassword(password.get());
+            }
+        }
+
+        return RedisClient.create(redisUriBuilder.build());
     }
 
     public static RedisClusterAsyncCommands<String, HistoricalPlanStatistics> getRedisClusterAsyncCommands(RedisProviderConfig redisProviderConfig,
