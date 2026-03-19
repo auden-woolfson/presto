@@ -16,8 +16,11 @@ package com.facebook.presto.statistic;
 import com.facebook.presto.spi.statistics.HistoricalPlanStatistics;
 import io.lettuce.core.AbstractRedisClient;
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
+
+import java.net.URI;
 
 public class RedisClusterAsyncCommandsFactory
 {
@@ -30,7 +33,13 @@ public class RedisClusterAsyncCommandsFactory
 
     public static RedisClient getRedisClient(RedisProviderConfig redisProviderConfig)
     {
-        return RedisClient.create(redisProviderConfig.getServerUri());
+        URI serverUri = URI.create(redisProviderConfig.getServerUri());
+        RedisURI redisURI = RedisURI.builder()
+                .withHost(serverUri.getHost())
+                .withPort(serverUri.getPort())
+                .withAuthentication("default", "yourpassword")
+                .build();
+        return RedisClient.create(redisURI);
     }
 
     public static RedisClusterAsyncCommands<String, HistoricalPlanStatistics> getRedisClusterAsyncCommands(RedisProviderConfig redisProviderConfig,
