@@ -39,11 +39,11 @@ public class RedisClusterAsyncCommandsFactory
                 .withHost(serverUri.getHost())
                 .withPort(serverUri.getPort());
 
-        Optional<String> username = Optional.of(redisProviderConfig.getRedisUsername());
-        Optional<String> password = Optional.of(redisProviderConfig.getRedisPassword());
+        Optional<String> username = Optional.ofNullable(redisProviderConfig.getRedisUsername());
+        Optional<String> password = Optional.ofNullable(redisProviderConfig.getRedisPassword());
 
-        if (!password.isEmpty()) {
-            if (!username.isEmpty()) {
+        if (password.isPresent()) {
+            if (username.isPresent()) {
                 redisUriBuilder.withAuthentication(username.get(), password.get());
             }
             else {

@@ -42,6 +42,7 @@ public class RedisProviderConfig
     private boolean clusterModeEnabled;
     private long totalSetTimeoutMs;
     private String credentialsPath;
+    private String redisPropertiesPath;
     private String redisUsername;
     private String redisPassword;
 
